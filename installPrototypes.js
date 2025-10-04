@@ -1,7 +1,6 @@
 if (!globalThis.path) {
   let pathImpl;
 
-  // Browser path implementatie
   const browserPath = {
     sep: '/',
     normalize(p) {
@@ -32,15 +31,11 @@ if (!globalThis.path) {
   };
 
   if (typeof window !== 'undefined') {
-    // Browser → gebruik eigen implementatie
     pathImpl = browserPath;
   } else {
-    // Node.js → probeer native path
     try {
-      // Werkt voor zowel ESM als CJS
       pathImpl = (await import('path')).default || require('path');
     } catch {
-      // Fallback naar browservariant
       pathImpl = browserPath;
     }
   }
@@ -49,7 +44,7 @@ if (!globalThis.path) {
 }
 
 export default function installPrototypes() {
-  // --- String extensions ---
+  // --- STRING EXTENSIONS ---
   const defineString = (name, fn) =>
     Object.defineProperty(String.prototype, name, {
       enumerable: false,
@@ -58,22 +53,35 @@ export default function installPrototypes() {
       value: fn,
     });
 
-  defineString('toHsp', function () {
-    return this.replace(/\.\w{3}$/i, '.hsp');
-  });
-
+  /**
+   * Swap all / ↔ \ in a string.
+   * @param {string} str
+   * @returns {string}
+   */
   defineString('slashreverse', function (str) {
     return String(str).replace(/[\\/]/g, (ch) => (ch === '\\' ? '/' : '\\'));
   });
 
-  defineString('slashwin', function () {
-    return String(this).replace(/[\\/]/g, '\\');
-  });
-
+  /**
+   * Normalize path separators to /
+   * @returns {string}
+   */
   defineString('slashlinux', function () {
     return String(this).replace(/[\\/]/g, '/');
   });
 
+  /**
+   * Normalize path separators to \
+   * @returns {string}
+   */
+  defineString('slashwin', function () {
+    return String(this).replace(/[\\/]/g, '\\');
+  });
+
+  /**
+   * Remove spaces, diacritics, normalize, lowercase, trim
+   * @returns {string}
+   */
   defineString('strip', function () {
     return String(this)
       .toLowerCase()
@@ -83,6 +91,11 @@ export default function installPrototypes() {
       .trim();
   });
 
+  /**
+   * Compare two strings loosely after stripping
+   * @param {string} otherStr
+   * @returns {boolean}
+   */
   defineString('stripCompare', function (otherStr) {
     const normalize = (str) =>
       String(str)
@@ -94,14 +107,36 @@ export default function installPrototypes() {
     return normalize(this).includes(normalize(otherStr));
   });
 
-  defineString('capitalize', function () {
-    return this.charAt(0).toUpperCase() + this.slice(1);
+  /**
+   * Capitalize the first letter only
+   * @returns {string}
+   */
+  defineString('toWordCapitalized', function () {
+    const str = String(this);
+    if (!str) return '';
+    return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
   });
 
-  defineString('truncate', function (length, suffix = '…') {
-    return this.length > length ? this.slice(0, length) + suffix : this.toString();
+  /**
+   * Capitalize every word
+   * @returns {string}
+   */
+  defineString('toEveryWordCapitalized', function () {
+    return String(this).replace(/\w\S*/g, (w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase());
   });
 
+  /**
+   * Get array of words in string
+   * @returns {string[]}
+   */
+  defineString('words', function () {
+    return String(this).match(/\b\w+\b/g) || [];
+  });
+
+  /**
+   * Check if string is valid JSON
+   * @returns {boolean}
+   */
   defineString('isJson', function () {
     if (typeof this !== 'string' || !this.trim()) return false;
     try {
@@ -112,6 +147,10 @@ export default function installPrototypes() {
     }
   });
 
+  /**
+   * Parse JSON if possible, else return original string
+   * @returns {any}
+   */
   defineString('safeParseJson', function () {
     try {
       return JSON.parse(this);
@@ -120,6 +159,10 @@ export default function installPrototypes() {
     }
   });
 
+  /**
+   * Parse JSON if possible, else return null
+   * @returns {any|null}
+   */
   defineString('nullParseJson', function () {
     if (!this.trim()) return null;
     try {
@@ -129,11 +172,22 @@ export default function installPrototypes() {
     }
   });
 
+  /**
+   * Compare filenames (ignores absolute/relative)
+   * @param {string} otherPath
+   * @returns {boolean}
+   */
   defineString('filenameCompare', function (otherPath) {
     const normalizeName = (p) => path.basename(p).toLowerCase();
     return normalizeName(this.toString()) === normalizeName(otherPath);
   });
 
+  /**
+   * Substring between two markers
+   * @param {string} startStr
+   * @param {string} [stopStr]
+   * @returns {string}
+   */
   defineString('substringFrom', function (startStr, stopStr) {
     const str = this.toString();
     const startIndex = str.indexOf(startStr);
@@ -144,7 +198,7 @@ export default function installPrototypes() {
     return endIndex === -1 ? afterStart : afterStart.slice(0, endIndex);
   });
 
-  // --- Number extensions ---
+  // --- NUMBER EXTENSIONS ---
   const defineNumber = (name, fn) =>
     Object.defineProperty(Number.prototype, name, {
       enumerable: false,
@@ -153,28 +207,60 @@ export default function installPrototypes() {
       value: fn,
     });
 
+  /**
+   * Percentage of a number
+   * @param {number} percent
+   * @returns {number}
+   */
   defineNumber('percentage', function (percent) {
     return (this.valueOf() * percent) / 100;
   });
 
+  /**
+   * True if even
+   * @returns {boolean}
+   */
   defineNumber('isEven', function () {
     return this.valueOf() % 2 === 0;
   });
 
+  /**
+   * True if odd
+   * @returns {boolean}
+   */
   defineNumber('isOdd', function () {
     return this.valueOf() % 2 !== 0;
   });
 
+  /**
+   * Rounded number to decimals
+   * @param {number} decimals
+   * @returns {number}
+   */
   defineNumber('toFixedNumber', function (decimals = 2) {
     return parseFloat(this.valueOf().toFixed(decimals));
   });
 
+  /**
+   * Check if number is between min and max
+   * @param {number} min
+   * @param {number} max
+   * @returns {boolean}
+   */
   defineNumber('between', function (min, max) {
     const val = this.valueOf();
     return val >= min && val <= max;
   });
 
-  // --- Math utilities ---
+  /**
+   * Call function n times
+   * @param {(i:number)=>void} fn
+   */
+  defineNumber('times', function (fn) {
+    for (let i = 0; i < this.valueOf(); i++) fn(i);
+  });
+
+  // --- MATH EXTENSIONS ---
   const defineMath = (name, fn) => {
     if (!Math[name]) Math[name] = fn;
   };
@@ -186,7 +272,7 @@ export default function installPrototypes() {
   defineMath('lerp', (min, max, t) => min + (max - min) * t);
   defineMath('mapRange', (value, inMin, inMax, outMin, outMax) => ((value - inMin) / (inMax - inMin)) * (outMax - outMin) + outMin);
 
-  // --- Array extensions ---
+  // --- ARRAY EXTENSIONS ---
   const defineArray = (name, fn) =>
     Object.defineProperty(Array.prototype, name, {
       enumerable: false,
@@ -195,6 +281,12 @@ export default function installPrototypes() {
       value: fn,
     });
 
+  /**
+   * Find object by key=value
+   * @param {string} key
+   * @param {any} value
+   * @returns {object|null}
+   */
   defineArray('findByKey', function (key, value) {
     for (const item of this) {
       if (item[key] === value) return item;
@@ -202,6 +294,11 @@ export default function installPrototypes() {
     return null;
   });
 
+  /**
+   * Sum all numeric values for a key
+   * @param {string} key
+   * @returns {number}
+   */
   defineArray('sumByKey', function (key) {
     return this.reduce((acc, item) => {
       const val = item[key];
@@ -209,6 +306,11 @@ export default function installPrototypes() {
     }, 0);
   });
 
+  /**
+   * Parse specified keys in object array
+   * @param {string[]} keys
+   * @returns {Array<object>}
+   */
   defineArray('parseKeys', function (keys) {
     return this.map((obj) => {
       if (obj && typeof obj === 'object') {
@@ -226,6 +328,10 @@ export default function installPrototypes() {
     });
   });
 
+  /**
+   * Attempt JSON parse on all string values in object array
+   * @returns {Array<object>}
+   */
   defineArray('autoParseKeys', function () {
     return this.map((obj) => {
       if (obj && typeof obj === 'object') {
@@ -233,9 +339,7 @@ export default function installPrototypes() {
           if (typeof obj[key] === 'string') {
             try {
               obj[key] = JSON.parse(obj[key]);
-            } catch {
-              // niet parseable blijft string
-            }
+            } catch {}
           }
         }
       }
@@ -243,7 +347,46 @@ export default function installPrototypes() {
     });
   });
 
-  // --- Object extensions ---
+  /**
+   * Return unique values of array
+   * @returns {Array<any>}
+   */
+  defineArray('unique', function () {
+    return [...new Set(this)];
+  });
+
+  /**
+   * Return shuffled array
+   * @returns {Array<any>}
+   */
+  defineArray('shuffle', function () {
+    let arr = [...this];
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+  });
+
+  /**
+   * Return first n elements
+   * @param {number} n
+   * @returns {Array<any>|any}
+   */
+  defineArray('first', function (n = 1) {
+    return n === 1 ? this[0] : this.slice(0, n);
+  });
+
+  /**
+   * Return last n elements
+   * @param {number} n
+   * @returns {Array<any>|any}
+   */
+  defineArray('last', function (n = 1) {
+    return n === 1 ? this[this.length - 1] : this.slice(-n);
+  });
+
+  // --- OBJECT EXTENSIONS ---
   const defineObject = (name, fn) =>
     Object.defineProperty(Object.prototype, name, {
       enumerable: false,
@@ -252,6 +395,11 @@ export default function installPrototypes() {
       value: fn,
     });
 
+  /**
+   * Parse specific keys in object
+   * @param {string[]} keys
+   * @returns {object}
+   */
   defineObject('parseKeys', function (keys) {
     for (const key of keys) {
       if (this.hasOwnProperty(key) && typeof this[key] === 'string') {
@@ -263,5 +411,35 @@ export default function installPrototypes() {
       }
     }
     return this;
+  });
+
+  /**
+   * Map object keys
+   * @param {object} obj
+   * @param {(k:string,v:any)=>[string,any]} fn
+   * @returns {object}
+   */
+  Object.defineProperty(Object, 'keysMap', {
+    value: function (obj, fn) {
+      return Object.fromEntries(Object.entries(obj).map(([k, v]) => fn(k, v)));
+    },
+    enumerable: false,
+    configurable: false,
+    writable: false,
+  });
+
+  /**
+   * Map object values
+   * @param {object} obj
+   * @param {(v:any,k:string)=>any} fn
+   * @returns {object}
+   */
+  Object.defineProperty(Object, 'valuesMap', {
+    value: function (obj, fn) {
+      return Object.fromEntries(Object.entries(obj).map(([k, v]) => [k, fn(v, k)]));
+    },
+    enumerable: false,
+    configurable: false,
+    writable: false,
   });
 }
