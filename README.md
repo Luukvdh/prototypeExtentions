@@ -2,9 +2,10 @@
 Extend String, Array, Number, Object with generally usefull or outright genious functions. Use NodeJS' 'path' functions in the browser;
 ---
 
-##Available Functions
+## Available Functions
 
 ### String
+
 toHsp()
 
 reverse()
@@ -36,6 +37,7 @@ nullParseJson()
 filenameCompare(otherPath)
 
 ### Number
+
 percentage(percent)
 
 isEven()
@@ -51,6 +53,7 @@ clamp(min, max)
 times(fn)
 
 ### Array
+
 findByKey(key, value)
 
 sumByKey(key)
@@ -70,9 +73,11 @@ sortByKey(key, ascending?)
 sortByKeyName(key, ascending?)
 
 ### Object
+
 parseKeys(keys: string[])
 
 ### Math
+
 randomRangeFloat(min, max)
 
 randomRangeInt(min, max)
