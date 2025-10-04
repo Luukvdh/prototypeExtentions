@@ -4,7 +4,7 @@ Extend String, Array, Number, Object with generally usefull or outright genious 
 
 ##Available Functions
 
-###String
+##String
 toHsp()
 
 reverse()
@@ -35,7 +35,7 @@ nullParseJson()
 
 filenameCompare(otherPath)
 
-###Number
+##Number
 percentage(percent)
 
 isEven()
@@ -50,7 +50,7 @@ clamp(min, max)
 
 times(fn)
 
-###Array
+##Array
 findByKey(key, value)
 
 sumByKey(key)
@@ -69,10 +69,10 @@ sortByKey(key, ascending?)
 
 sortByKeyName(key, ascending?)
 
-###Object
+##Object
 parseKeys(keys: string[])
 
-###Math
+##Math
 randomRangeFloat(min, max)
 
 randomRangeInt(min, max)
